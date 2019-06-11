@@ -8,6 +8,9 @@
 #include "Camera.h"
 #include <iostream>
 #include "Maze.h"
+#include <chrono>
+#include <thread>
+
 
 #define CLEAR_COLOR 0.2f, 0.3f, 0.3f, 1.0f
 
@@ -31,7 +34,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-const int MAZE_SIZE = 101;
+const int MAZE_SIZE = 31;
 // will shift cube around for maze
 const float CUBE_VERTICES[] =
 {
@@ -174,7 +177,7 @@ int main()
 	glGenBuffers(1, &VBO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, cubes_shifted.size(), &cubes_shifted[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cubes_shifted.size(), &cubes_shifted[0], GL_STATIC_DRAW);
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -216,7 +219,7 @@ int main()
 	glGenBuffers(1, &VBOFLOOR);
 	glBindVertexArray(VAOFLOOR);
 	glBindBuffer(GL_ARRAY_BUFFER, VBOFLOOR);
-	glBufferData(GL_ARRAY_BUFFER, floor_shifted.size(), &floor_shifted[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*floor_shifted.size(), &floor_shifted[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
@@ -244,7 +247,7 @@ int main()
 	}
 	stbi_image_free(data);
 	glBindVertexArray(0);
-	
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// per-frame time logic
@@ -290,6 +293,7 @@ int main()
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		  
 	}
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
@@ -393,7 +397,7 @@ void mazeInit()
 				model = glm::translate(model, shift);
 				for (int i = 0; i < 180; i += 5) // 48 is num vertices + tex for cube
 				  {
-				    glm::vec3 newVert = glm::vec3(CUBE_VERTICES[i], CUBE_VERTICES[i+1], CUBE_VERTICES[i+2]);
+				    glm::vec4 newVert = glm::vec4(CUBE_VERTICES[i], CUBE_VERTICES[i+1], CUBE_VERTICES[i+2], 1.0);
 				    newVert = model*newVert;
 				    cubes_shifted.push_back(newVert.x);
 				    cubes_shifted.push_back(newVert.y);
@@ -409,7 +413,7 @@ void mazeInit()
 			    model = glm::translate(model, shift);
 			    for (int i = 0; i < 30; i += 5) // 30 is num vertices + tex for cube
 			      {
-				glm::vec3 newVert = glm::vec3(FLOOR[i], FLOOR[i+1], FLOOR[i+2]);
+				glm::vec4 newVert = glm::vec4(FLOOR[i], FLOOR[i+1], FLOOR[i+2], 1.0);
 				newVert = model*newVert;
 				floor_shifted.push_back(newVert.x);
 				floor_shifted.push_back(newVert.y);
