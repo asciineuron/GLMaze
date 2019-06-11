@@ -316,13 +316,13 @@ void processInput(GLFWwindow* window)
 		glfwSetWindowShouldClose(window, true);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
+	  camera.ProcessKeyboard(FORWARD, deltaTime, m);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	  camera.ProcessKeyboard(BACKWARD, deltaTime, m);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
+	  camera.ProcessKeyboard(LEFT, deltaTime, m);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
+	  camera.ProcessKeyboard(RIGHT, deltaTime, m);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -440,6 +440,8 @@ bool inCorner()
 {
   return ((int)camera.Position.x == MAZE_SIZE-2 && (int)camera.Position.z == -MAZE_SIZE+2);
 }
+
+
 
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
