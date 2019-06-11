@@ -23,7 +23,7 @@ const int HEIGHT = 600;
 const int WIDTH = 800;
 
 
-Camera camera(glm::vec3(0.0f, 0.0f, -1.5f));
+Camera camera(glm::vec3(1.0f, 0.0f, -1.0f));
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -78,7 +78,19 @@ const float CUBE_VERTICES[] =
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
+const float FLOOR[] =
+  { // vertex - texture
+   0.5f, -0.5f, 0.5f, 1.0f, 1.0f, // forward right
+   0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
+   -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // back left
+   -0.5f, -0.5f, 0.5f, 0.0f, 1.0f // forward left -> describes a cube laying down relative camera
+  };
+unsigned int floor_indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+};  
 std::vector<glm::vec3> cube_positions{};
+std::vector<glm::vec3> floor_positions{};
 Maze m{MAZE_SIZE};
 
 int main()
@@ -195,11 +207,47 @@ int main()
 	stbi_image_free(data);
 	shader.use();
 	shader.setInt("texture1", 0);
-	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glBindVertexArray(0);
-
+	// now for floor
+	unsigned int VAOFLOOR, VBOFLOOR;
+	glGenVertexArrays(1, &VAOFLOOR);
+	glGenBuffers(1, &VBOFLOOR);
+	glBindVertexArray(VAOFLOOR);
+	glBindBuffer(GL_ARRAY_BUFFER, VBOFLOOR);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(FLOOR), FLOOR, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
+	unsigned int EBOFLOOR;
+	glGenBuffers(1, &EBOFLOOR);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOFLOOR);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(floor_indices), floor_indices, GL_STATIC_DRAW);
+	unsigned int texturefloor;
+	glGenTextures(1, &texturefloor);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texturefloor);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	data = stbi_load("floor.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+	glBindVertexArray(0);
+	
 	while (!glfwWindowShouldClose(window))
 	{
 		// per-frame time logic
@@ -235,14 +283,26 @@ int main()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
+		shader.setInt("texture1", 0);
 		for (glm::vec3 shift : cube_positions)
 		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, shift);
-			shader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+		  glm::mat4 model = glm::mat4(1.0f);
+		  model = glm::translate(model, shift);
+		  shader.setMat4("model", model);
+		  glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+		glBindVertexArray(VAOFLOOR);
+		shader.setInt("texture1", 1);
+		for (glm::vec3 shift : floor_positions)
+		  {
+		    glm::mat4 model = glm::mat4(1.0f);
 
+		    model = glm::translate(model, shift);
+		    //model = glm::rotate(model, glm::radians(89.0f), glm::vec3(1.0f,0.0f,0.0f));
+		    shader.setMat4("model", model);
+		    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		  }
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -344,8 +404,17 @@ void mazeInit()
 				// x is row, depth is col, all at same height y
 				cube_positions.push_back(glm::vec3((float)row, 0.0f, -(float)col));
 			}
+			else
+			  {
+			    floor_positions.push_back(glm::vec3((float)row, 0.0f, -(float)col));
+			  }
 		}
 	}
+
+}
+
+bool inCorner()
+{
 
 }
 
