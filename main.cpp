@@ -21,6 +21,7 @@ void processInput(GLFWwindow* window);
 GLFWwindow* setup();
 void mazeInit();
 unsigned int loadCubemap(std::vector<std::string> faces);
+bool inCorner();
 
 const int HEIGHT = 600;
 const int WIDTH = 800;
@@ -256,6 +257,14 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		if (inCorner())
+		  {
+		    std::cout << "you won!, total time taken: " << glfwGetTime() << std::endl;
+		    glDeleteVertexArrays(1, &VAO);
+		    glDeleteBuffers(1, &VBO);
+		    glfwTerminate();
+		    return 0;
+		  }
 		// input
 		// -----
 		processInput(window);
@@ -429,7 +438,7 @@ void mazeInit()
 
 bool inCorner()
 {
-
+  return ((int)camera.Position.x == MAZE_SIZE-2 && (int)camera.Position.z == -MAZE_SIZE+2);
 }
 
 unsigned int loadCubemap(std::vector<std::string> faces)

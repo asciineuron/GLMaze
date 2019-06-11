@@ -1,0 +1,1 @@
+g++ -o main main.cpp glad.c Maze.cpp imageProcess.cpp -lglfw -lGL -lXi -lX11 -lpthread -lXrandr -ldl
