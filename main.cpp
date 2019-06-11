@@ -84,12 +84,22 @@ const float FLOOR[] =
    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // back left
    -0.5f, -0.5f, 0.5f, 0.0f, 1.0f // forward left -> describes a cube laying down relative camera
-  };
+  };/*
+const float FLOOR[] =
+  { // vertex - texture
+   0.5f, -0.5f, 0.5f, 1.0f, 1.0f, // forward right
+   0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
+   -0.5f, -0.5f, 0.5f, 0.0f, 1.0f, // forward left
+   0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
+   -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // back left
+   -0.5f, -0.5f, 0.5f, 0.0f, 1.0f // forward left -> describes a cube laying down relative camera
+   };*/
 unsigned int floor_indices[] = {  // note that we start from 0!
     0, 1, 3,   // first triangle
     1, 2, 3    // second triangle
 };  
 std::vector<glm::vec3> cube_positions{};
+std::vector<float> cubes_shifted{};
 std::vector<glm::vec3> floor_positions{};
 Maze m{MAZE_SIZE};
 
@@ -174,7 +184,7 @@ int main()
 	glGenBuffers(1, &VBO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), CUBE_VERTICES, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, cubes_shifted.size(), &cubes_shifted[0], GL_STATIC_DRAW);
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -265,7 +275,6 @@ int main()
 		// first skybox
 		glDepthMask(GL_FALSE);
 		shaderSky.use();
-	
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		shaderSky.setMat4("projection", projection);
 		glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
@@ -284,13 +293,10 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
 		shader.setInt("texture1", 0);
-		for (glm::vec3 shift : cube_positions)
-		{
-		  glm::mat4 model = glm::mat4(1.0f);
-		  model = glm::translate(model, shift);
-		  shader.setMat4("model", model);
-		  glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		glm::mat4 model = glm::mat4(1.0f);
+		shader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, cubes_shifted.size()/5); // five elements per vertex
+		
 		glBindVertexArray(VAOFLOOR);
 		shader.setInt("texture1", 1);
 		for (glm::vec3 shift : floor_positions)
@@ -402,7 +408,20 @@ void mazeInit()
 			if (!m.data[row][col]) // if wall generate new cube
 			{
 				// x is row, depth is col, all at same height y
-				cube_positions.push_back(glm::vec3((float)row, 0.0f, -(float)col));
+				//cube_positions.push_back(glm::vec3((float)row, 0.0f, -(float)col));
+				glm::vec3 shift = glm::vec3((float)row, 0.0f, -(float)col);
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, shift);
+				for (int i = 0; i < 48; i += 5) // 48 is num vertices + tex for cube
+				  {
+				    glm::vec3 newVert = glm::vec3(CUBE_VERTICES[i], CUBE_VERTICES[i+1], CUBE_VERTICES[i+2]);
+				    newVert = model*newVert;
+				    cubes_shifted.push_back(newVert.x);
+				    cubes_shifted.push_back(newVert.y);
+				    cubes_shifted.push_back(newVert.z);
+				    cubes_shifted.push_back(CUBE_VERTICES[i+3]);
+				    cubes_shifted.push_back(CUBE_VERTICES[i+4]); // texcoords
+				  }
 			}
 			else
 			  {
