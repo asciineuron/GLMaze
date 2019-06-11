@@ -82,25 +82,15 @@ const float FLOOR[] =
   { // vertex - texture
    0.5f, -0.5f, 0.5f, 1.0f, 1.0f, // forward right
    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
-   -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // back left
-   -0.5f, -0.5f, 0.5f, 0.0f, 1.0f // forward left -> describes a cube laying down relative camera
-  };/*
-const float FLOOR[] =
-  { // vertex - texture
-   0.5f, -0.5f, 0.5f, 1.0f, 1.0f, // forward right
-   0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
    -0.5f, -0.5f, 0.5f, 0.0f, 1.0f, // forward left
    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // back right
    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // back left
    -0.5f, -0.5f, 0.5f, 0.0f, 1.0f // forward left -> describes a cube laying down relative camera
-   };*/
-unsigned int floor_indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};  
-std::vector<glm::vec3> cube_positions{};
+   };
+
 std::vector<float> cubes_shifted{};
-std::vector<glm::vec3> floor_positions{};
+std::vector<float> floor_shifted{};
+
 Maze m{MAZE_SIZE};
 
 int main()
@@ -226,15 +216,12 @@ int main()
 	glGenBuffers(1, &VBOFLOOR);
 	glBindVertexArray(VAOFLOOR);
 	glBindBuffer(GL_ARRAY_BUFFER, VBOFLOOR);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(FLOOR), FLOOR, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, floor_shifted.size(), &floor_shifted[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
-	unsigned int EBOFLOOR;
-	glGenBuffers(1, &EBOFLOOR);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOFLOOR);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(floor_indices), floor_indices, GL_STATIC_DRAW);
+
 	unsigned int texturefloor;
 	glGenTextures(1, &texturefloor);
 	glActiveTexture(GL_TEXTURE1);
@@ -283,7 +270,7 @@ int main()
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapTexture);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glDepthMask(GL_TRUE);
-		// then rest of scene
+		// then rest of scene, first walls
 		shader.use();
 		shader.setMat4("projection", projection);
 		glm::mat4 view2 = camera.GetViewMatrix();
@@ -296,18 +283,10 @@ int main()
 		glm::mat4 model = glm::mat4(1.0f);
 		shader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, cubes_shifted.size()/5); // five elements per vertex
-		
+		// floor
 		glBindVertexArray(VAOFLOOR);
 		shader.setInt("texture1", 1);
-		for (glm::vec3 shift : floor_positions)
-		  {
-		    glm::mat4 model = glm::mat4(1.0f);
-
-		    model = glm::translate(model, shift);
-		    //model = glm::rotate(model, glm::radians(89.0f), glm::vec3(1.0f,0.0f,0.0f));
-		    shader.setMat4("model", model);
-		    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		  }
+		glDrawArrays(GL_TRIANGLES, 0, floor_shifted.size()/5);
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -412,7 +391,7 @@ void mazeInit()
 				glm::vec3 shift = glm::vec3((float)row, 0.0f, -(float)col);
 				glm::mat4 model = glm::mat4(1.0f);
 				model = glm::translate(model, shift);
-				for (int i = 0; i < 48; i += 5) // 48 is num vertices + tex for cube
+				for (int i = 0; i < 180; i += 5) // 48 is num vertices + tex for cube
 				  {
 				    glm::vec3 newVert = glm::vec3(CUBE_VERTICES[i], CUBE_VERTICES[i+1], CUBE_VERTICES[i+2]);
 				    newVert = model*newVert;
@@ -425,7 +404,19 @@ void mazeInit()
 			}
 			else
 			  {
-			    floor_positions.push_back(glm::vec3((float)row, 0.0f, -(float)col));
+			    glm::vec3 shift = glm::vec3((float)row, 0.0f, -(float)col);
+			    glm::mat4 model = glm::mat4(1.0f);
+			    model = glm::translate(model, shift);
+			    for (int i = 0; i < 30; i += 5) // 30 is num vertices + tex for cube
+			      {
+				glm::vec3 newVert = glm::vec3(FLOOR[i], FLOOR[i+1], FLOOR[i+2]);
+				newVert = model*newVert;
+				floor_shifted.push_back(newVert.x);
+				floor_shifted.push_back(newVert.y);
+				floor_shifted.push_back(newVert.z);
+				floor_shifted.push_back(FLOOR[i+3]);
+				floor_shifted.push_back(FLOOR[i+4]); // texcoords
+			      }
 			  }
 		}
 	}
