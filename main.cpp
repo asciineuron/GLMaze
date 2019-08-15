@@ -35,7 +35,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-const int MAZE_SIZE = 31;
+const int MAZE_SIZE = 11;
 // will shift cube around for maze
 const float CUBE_VERTICES[] =
 {
@@ -362,7 +362,7 @@ GLFWwindow* setup()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	//GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "test01", glfwGetPrimaryMonitor(), NULL);
+	//	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "test01", glfwGetPrimaryMonitor(), NULL);
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "test01", NULL, NULL);
 	if (window == NULL)
 	{

@@ -192,7 +192,7 @@ public:
 		      }
 		  }
 
-
+		
 		Position.y = 0;
 
 		
