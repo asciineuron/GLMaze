@@ -1,3 +1,3 @@
 # GLMaze
 Screnshot:
-![SHOT](shot.png)
+![SHOT](./shot.png)
